@@ -1,4 +1,4 @@
-package com.jy.config;
+package com.jy.config.websocket;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

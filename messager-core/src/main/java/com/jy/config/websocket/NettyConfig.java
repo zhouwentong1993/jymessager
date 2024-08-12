@@ -1,9 +1,10 @@
-package com.jy.config;
+package com.jy.config.websocket;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,8 @@ public class NettyConfig {
     private WebsocketConfig websocketConfig;
     @Autowired
     private WebSocketChannelInitializer webSocketChannelInitializer;
+    @Autowired
+    private RedissonClient redissonClient;
 
     private final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
     private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();

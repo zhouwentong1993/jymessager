@@ -1,4 +1,4 @@
-package com.jy.config;
+package com.jy.config.websocket;
 
 import com.jy.websocket.handler.WebsocketServerHandler;
 import io.netty.channel.Channel;
