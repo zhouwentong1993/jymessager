@@ -1,5 +1,7 @@
 package com.jy.test;
 
+import com.alibaba.fastjson2.JSON;
+import com.jy.protocal.constants.Response;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -7,7 +9,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpMessage;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.*;
@@ -26,8 +27,8 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<Object> 
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object msg) throws Exception {
         if (msg instanceof FullHttpRequest request) {
             handleHttpRequest(channelHandlerContext, request);
-        } else if (msg instanceof WebSocketFrame) {
-            handleWebSocketFrame(channelHandlerContext, (WebSocketFrame) msg);
+        } else if (msg instanceof WebSocketFrame webSocketFrame) {
+            handleWebSocketFrame(channelHandlerContext, webSocketFrame);
         }
     }
 
@@ -55,6 +56,12 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<Object> 
         }
 
         String text = textWebSocketFrame.text();
+        boolean valid = JSON.isValid(text);// check if json format
+        if (!valid) {
+            log.error("invalid json format");
+            channelHandlerContext.channel().write(new TextWebSocketFrame(JSON.toJSONString(Response.error("invalid json format"))));
+            return;
+        }
         log.info("received message: {}", text);
         channelHandlerContext.channel().write(new TextWebSocketFrame("received: " + text));
 
@@ -67,13 +74,13 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<Object> 
             return;
         }
         // handle websocket handshake
-        WebSocketServerHandshaker webSocketServerHandshaker = new WebSocketServerHandshakerFactory("ws://localhost:8080/websocket", null, false).newHandshaker(request);
-        if (webSocketServerHandshaker == null) {
+        WebSocketServerHandshakerFactory webSocketServerHandshakerFactory = new WebSocketServerHandshakerFactory("ws://localhost:8080/websocket", null, false);
+        handShaker = webSocketServerHandshakerFactory.newHandshaker(request);
+        if (handShaker == null) {
             WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
         } else {
-            webSocketServerHandshaker.handshake(ctx.channel(), request);
+            handShaker.handshake(ctx.channel(), request);
         }
-
     }
 
     private void sendHttpResponse(ChannelHandlerContext ctx, FullHttpRequest request, FullHttpResponse response) {

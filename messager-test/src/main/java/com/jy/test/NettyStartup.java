@@ -1,5 +1,7 @@
 package com.jy.test;
 
+import com.jy.protocal.decoder.MessageDecoder;
+import com.jy.protocal.encoder.MessageEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -28,6 +30,8 @@ public class NettyStartup {
                             pipeline.addLast("http-codec", new HttpServerCodec());
                             pipeline.addLast("aggregator", new HttpObjectAggregator(65536));
                             pipeline.addLast("http-chucked", new ChunkedWriteHandler());
+                            pipeline.addLast("encoder", new MessageEncoder());
+                            pipeline.addLast("decoder", new MessageDecoder());
                             pipeline.addLast("handler", new WebsocketServerHandler());
                         }
                     });
