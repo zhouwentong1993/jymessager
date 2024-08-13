@@ -1,5 +1,6 @@
 package com.jy.websocket.handler;
 
+import com.jy.message.MessageHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -9,36 +10,50 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
-import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
+import io.netty.handler.codec.http.websocketx.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpUtil.isKeepAlive;
 import static io.netty.handler.codec.http.HttpUtil.setContentLength;
 
 @Slf4j
-public class HeartbeatChannelHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
+@Component
+public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
     private WebSocketServerHandshaker handShaker;
 
+    @Resource
+    private Map<String, MessageHandler> messageHandlerMap;
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-
+        log.info("channelRead");
         if (msg instanceof FullHttpRequest) {
             // 处理 websocket 握手
             handleHttpRequest(ctx, (FullHttpRequest) msg);
+        } else if (msg instanceof WebSocketFrame) { // 处理部分 websocket frame
+            // check if close frame
+            if (msg instanceof CloseWebSocketFrame) {
+                CloseWebSocketFrame closeWebSocketFrame = (CloseWebSocketFrame) msg;
+                log.info("close frame received, now clean up resources");
+                handShaker.close(ctx.channel(), closeWebSocketFrame.retain());
+            }
+            // answer ping frame
+            if (msg instanceof PingWebSocketFrame) {
+                PingWebSocketFrame ping = (PingWebSocketFrame) msg;
+                ctx.channel().write(new PongWebSocketFrame(ping.content().retain()));
+            }
         }
     }
 
     @Override
-    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        super.channelRegistered(ctx);
-    }
-
-    @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, TextWebSocketFrame textWebSocketFrame) throws Exception {
+
 
     }
 

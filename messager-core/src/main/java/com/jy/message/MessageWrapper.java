@@ -1,12 +1,11 @@
-package com.jy.protocal;
+package com.jy.message;
 
 import lombok.Data;
 
-/**
- * 通信协议，请求体
- */
+import java.nio.channels.Channel;
+
 @Data
-public class Message {
+public class MessageWrapper {
 
     private Long id; // 唯一标识
 
@@ -19,5 +18,7 @@ public class Message {
     private String body; // body 体
 
     private int clientType; // 设备类型，比如安卓机、POS 机之类的。
+
+    private Channel channel; // 通道
 
 }

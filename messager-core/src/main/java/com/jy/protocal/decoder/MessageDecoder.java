@@ -1,7 +1,7 @@
 package com.jy.protocal.decoder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jy.protocal.Message;
+import com.jy.message.Message;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
