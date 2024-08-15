@@ -1,6 +1,10 @@
 package com.jy.websocket.handler;
 
+import com.alibaba.fastjson2.JSON;
+import com.jy.message.Message;
 import com.jy.message.MessageHandler;
+import com.jy.message.MessageWrapper;
+import com.jy.registry.ChannelManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -12,6 +16,7 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -27,8 +32,11 @@ public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebS
 
     private WebSocketServerHandshaker handShaker;
 
+    @Autowired
+    private ChannelManager channelManager;
+
     @Resource
-    private Map<String, MessageHandler> messageHandlerMap;
+    private Map<Integer, MessageHandler> messageHandlerMap;
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -53,8 +61,20 @@ public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebS
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, TextWebSocketFrame textWebSocketFrame) throws Exception {
-
-
+        String text = textWebSocketFrame.text();
+        log.info("received message: {}", text);
+        if (text == null || text.isEmpty() || !JSON.isValid(text)) {
+            log.error("empty message received, remove this channel: {}", channelHandlerContext.channel().id());
+            channelManager.unRegister(channelHandlerContext.channel());
+            return;
+        }
+        Message message = JSON.parseObject(text, Message.class);
+        MessageHandler messageHandler = messageHandlerMap.get(message.getMessageType());
+        if (messageHandler == null) {
+            log.error("no handler found for message type: {}", message.getMessageType());
+            return;
+        }
+        messageHandler.execute(MessageWrapper.wrap(message, channelHandlerContext.channel()));
     }
 
     private void handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) {

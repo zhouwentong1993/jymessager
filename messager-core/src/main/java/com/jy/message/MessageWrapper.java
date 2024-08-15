@@ -1,8 +1,7 @@
 package com.jy.message;
 
+import io.netty.channel.Channel;
 import lombok.Data;
-
-import java.nio.channels.Channel;
 
 @Data
 public class MessageWrapper {
@@ -20,5 +19,17 @@ public class MessageWrapper {
     private int clientType; // 设备类型，比如安卓机、POS 机之类的。
 
     private Channel channel; // 通道
+
+    public static MessageWrapper wrap(Message message, Channel channel) {
+        MessageWrapper wrapper = new MessageWrapper();
+        wrapper.setId(message.getId());
+        wrapper.setMessageType(message.getMessageType());
+        wrapper.setClientID(message.getClientID());
+        wrapper.setToken(message.getToken());
+        wrapper.setBody(message.getBody());
+        wrapper.setClientType(message.getClientType());
+        wrapper.setChannel(channel);
+        return wrapper;
+    }
 
 }

@@ -13,8 +13,9 @@ public interface MessageHandler {
 
     /**
      * 消息类型
+     *
      * @return 消息类型
      */
-    String getType();
+    int getType();
 
 }

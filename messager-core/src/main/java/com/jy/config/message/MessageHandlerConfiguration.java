@@ -17,8 +17,8 @@ public class MessageHandlerConfiguration {
     private List<MessageHandler> messageHandlers;
 
     @Bean
-    public Map<String, MessageHandler> messageHandlerMap() {
-        Map<String, MessageHandler> messageHandlerMap = new HashMap<>();
+    public Map<Integer, MessageHandler> messageHandlerMap() {
+        Map<Integer, MessageHandler> messageHandlerMap = new HashMap<>();
         for (MessageHandler handler : messageHandlers) {
             messageHandlerMap.put(handler.getType(), handler);
         }
