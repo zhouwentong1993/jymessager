@@ -16,7 +16,6 @@ public class WebSocketChannelInitializer extends ChannelInitializer<Channel> {
     @Autowired
     private WebsocketServerHandler websocketServerHandler;
 
-    // todo 加一个注解，让自定义的 Handler 能够被自动读取并注册到 pipeline 上
     @Override
     protected void initChannel(Channel channel) {
         ChannelPipeline pipeline = channel.pipeline();

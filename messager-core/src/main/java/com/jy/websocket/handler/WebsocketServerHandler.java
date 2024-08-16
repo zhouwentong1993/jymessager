@@ -78,7 +78,7 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<Object> 
             return;
         }
         // handle websocket handshake
-        WebSocketServerHandshakerFactory webSocketServerHandshakerFactory = new WebSocketServerHandshakerFactory("ws://localhost:8080/websocket", null, false);
+        WebSocketServerHandshakerFactory webSocketServerHandshakerFactory = new WebSocketServerHandshakerFactory("ws://localhost:9090/websocket", null, false);
         handShaker = webSocketServerHandshakerFactory.newHandshaker(request);
         if (handShaker == null) {
             WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
