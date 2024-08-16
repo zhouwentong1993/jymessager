@@ -1,15 +1,23 @@
 package com.jy.registry;
 
+import com.jy.config.redis.RedisKey;
+import com.jy.config.redis.RedisService;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelId;
+import io.netty.util.Timeout;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * 通道管理器
  */
+@Slf4j
 @Component
 public class ChannelManager {
 
@@ -17,9 +25,39 @@ public class ChannelManager {
     private final Map<String, Channel> deviceChannelMap = new ConcurrentHashMap<>();
     private final Map<ChannelId, Channel> channelMap = new ConcurrentHashMap<>();
 
+    @Autowired
+    private ChannelTimer channelTimer;
+    @Autowired
+    private RedisService redisService;
+
     public void register(String deviceID, Channel channel) {
         deviceChannelMap.put(deviceID, channel);
         channelMap.put(channel.id(), channel);
+        channelTimer.submit(new Consumer<Timeout>() {
+            @Override
+            public void accept(Timeout timeout) {
+                Channel channelByDeviceId = getChannelByDeviceId(deviceID);
+                if (channelByDeviceId == null) {
+                    log.info("device {} offline, remove it", deviceID);
+                    deviceChannelMap.remove(deviceID);
+                    channelMap.remove(channel.id());
+                } else {
+                    log.info("device {} is online, now check heartbeat", deviceID);
+                    String heartbeat = redisService.get(RedisKey.heartbeatKey(deviceID));
+                    if (heartbeat == null || heartbeat.isEmpty()) {
+                        log.info("device {} heartbeat timeout, remove it", deviceID);
+                        deviceChannelMap.remove(deviceID);
+                        channelMap.remove(channel.id());
+                        channelByDeviceId.close();
+                    }
+                }
+
+            }
+        }, 30, TimeUnit.SECONDS);
+    }
+
+    public Channel getChannelByDeviceId(String deviceID) {
+        return deviceChannelMap.get(deviceID);
     }
 
     public void unRegister(Channel channel) {
