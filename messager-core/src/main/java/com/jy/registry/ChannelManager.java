@@ -2,9 +2,9 @@ package com.jy.registry;
 
 import com.jy.config.redis.RedisKey;
 import com.jy.config.redis.RedisService;
+import com.jy.timer.GlobalTimer;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelId;
-import io.netty.util.Timeout;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 /**
  * 通道管理器
@@ -26,33 +25,31 @@ public class ChannelManager {
     private final Map<ChannelId, Channel> channelMap = new ConcurrentHashMap<>();
 
     @Autowired
-    private ChannelTimer channelTimer;
+    private GlobalTimer globalTimer;
     @Autowired
     private RedisService redisService;
 
     public void register(String deviceID, Channel channel) {
         deviceChannelMap.put(deviceID, channel);
         channelMap.put(channel.id(), channel);
-        channelTimer.submit(new Consumer<Timeout>() {
-            @Override
-            public void accept(Timeout timeout) {
-                Channel channelByDeviceId = getChannelByDeviceId(deviceID);
-                if (channelByDeviceId == null) {
-                    log.info("device {} offline, remove it", deviceID);
+        globalTimer.submit(timeout -> {
+            log.info("check device {} heartbeat", deviceID);
+            Channel channelByDeviceId = getChannelByDeviceId(deviceID);
+            if (channelByDeviceId == null) {
+                log.info("device {} offline, remove it", deviceID);
+                deviceChannelMap.remove(deviceID);
+                channelMap.remove(channel.id());
+            } else {
+                log.info("device {} is online, now check heartbeat", deviceID);
+                String heartbeat = redisService.get(RedisKey.heartbeatKey(deviceID));
+                if (heartbeat == null || heartbeat.isEmpty()) {
+                    log.info("device {} heartbeat timeout, remove it", deviceID);
                     deviceChannelMap.remove(deviceID);
                     channelMap.remove(channel.id());
-                } else {
-                    log.info("device {} is online, now check heartbeat", deviceID);
-                    String heartbeat = redisService.get(RedisKey.heartbeatKey(deviceID));
-                    if (heartbeat == null || heartbeat.isEmpty()) {
-                        log.info("device {} heartbeat timeout, remove it", deviceID);
-                        deviceChannelMap.remove(deviceID);
-                        channelMap.remove(channel.id());
-                        channelByDeviceId.close();
-                    }
+                    channelByDeviceId.close();
                 }
-
             }
+
         }, 30, TimeUnit.SECONDS);
     }
 

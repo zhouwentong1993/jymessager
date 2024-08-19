@@ -1,7 +1,7 @@
 package com.jy.message.handler;
 
 import com.alibaba.fastjson2.JSON;
-import com.jy.message.MessageHandler;
+import com.jy.message.AbstractMessageHandler;
 import com.jy.message.MessageType;
 import com.jy.message.MessageWrapper;
 import com.jy.message.handler.validator.HandshakeValidatorManagement;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class HandshakeMessageHandler implements MessageHandler {
+public class HandshakeMessageHandler extends AbstractMessageHandler {
 
     @Autowired
     private ChannelManager channelManager;
@@ -22,7 +22,7 @@ public class HandshakeMessageHandler implements MessageHandler {
     private HandshakeValidatorManagement handshakeValidatorManagement;
 
     @Override
-    public void execute(MessageWrapper message) {
+    public void doExecute(MessageWrapper message) {
         log.info("receive handshake message={}", message);
         // deal with handshake message
         if (!handshakeValidatorManagement.validate(message)) {
@@ -32,7 +32,7 @@ public class HandshakeMessageHandler implements MessageHandler {
             return;
         }
         channelManager.register(message.getClientID(), message.getChannel());
-
+        message.getChannel().writeAndFlush(JSON.toJSONString(Response.success()));
     }
 
     @Override

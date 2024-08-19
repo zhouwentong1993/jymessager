@@ -1,4 +1,4 @@
-package com.jy.registry;
+package com.jy.timer;
 
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 
 @Component
 @Slf4j
-public class ChannelTimer {
+public class GlobalTimer {
 
     private static final HashedWheelTimer timer = new HashedWheelTimer();
 
@@ -23,6 +23,7 @@ public class ChannelTimer {
     @PostConstruct
     public void init() {
         timer.start();
+        log.info("GlobalTimer started");
     }
 
 }
