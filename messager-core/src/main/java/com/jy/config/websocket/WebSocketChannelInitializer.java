@@ -1,6 +1,6 @@
 package com.jy.config.websocket;
 
-import com.jy.websocket.handler.WebsocketServerHandler;
+import com.jy.websocket.handler.MessagerChannelHandler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class WebSocketChannelInitializer extends ChannelInitializer<Channel> {
 
     @Autowired
-    private WebsocketServerHandler websocketServerHandler;
+    private MessagerChannelHandler messagerChannelHandler;
 
     @Override
     protected void initChannel(Channel channel) {
@@ -22,6 +22,6 @@ public class WebSocketChannelInitializer extends ChannelInitializer<Channel> {
         pipeline.addLast("http-codec", new HttpServerCodec());
         pipeline.addLast("aggregator", new HttpObjectAggregator(65536));
         pipeline.addLast("http-chucked", new ChunkedWriteHandler());
-        pipeline.addLast("handler", websocketServerHandler);
+        pipeline.addLast("handler", messagerChannelHandler);
     }
 }

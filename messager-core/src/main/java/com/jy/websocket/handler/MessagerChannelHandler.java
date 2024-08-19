@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.jy.message.Message;
 import com.jy.message.MessageHandler;
 import com.jy.message.MessageWrapper;
+import com.jy.protocal.constants.Response;
 import com.jy.registry.ChannelManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -53,10 +54,12 @@ public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebS
             }
             // answer ping frame
             if (msg instanceof PingWebSocketFrame) {
+                log.info("ping frame received, now answer with pong frame");
                 PingWebSocketFrame ping = (PingWebSocketFrame) msg;
                 ctx.channel().write(new PongWebSocketFrame(ping.content().retain()));
             }
         }
+        super.channelRead(ctx, msg);
     }
 
     @Override
@@ -65,6 +68,7 @@ public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebS
         log.info("received message: {}", text);
         if (text == null || text.isEmpty() || !JSON.isValid(text)) {
             log.error("empty message received, remove this channel: {}", channelHandlerContext.channel().id());
+            channelHandlerContext.channel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("invalid json format"))));
             channelManager.unRegister(channelHandlerContext.channel());
             return;
         }
@@ -72,6 +76,7 @@ public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebS
         MessageHandler messageHandler = messageHandlerMap.get(message.getMessageType());
         if (messageHandler == null) {
             log.error("no handler found for message type: {}", message.getMessageType());
+            channelHandlerContext.channel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("invalid message type:" + message.getMessageType()))));
             return;
         }
         messageHandler.execute(MessageWrapper.wrap(message, channelHandlerContext.channel()));
@@ -89,6 +94,7 @@ public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebS
         if (handShaker == null) {
             WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
         } else {
+            log.info("handshake success");
             handShaker.handshake(ctx.channel(), request);
         }
     }

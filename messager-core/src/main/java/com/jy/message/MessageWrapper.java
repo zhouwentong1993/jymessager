@@ -8,7 +8,7 @@ public class MessageWrapper {
 
     private Long id; // 唯一标识
 
-    private String messageType; // 请求
+    private int messageType; // 请求
 
     private String clientID; // 设备id
 

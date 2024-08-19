@@ -21,6 +21,7 @@ import static io.netty.handler.codec.http.HttpUtil.setContentLength;
 
 @Slf4j
 @Component
+@Deprecated
 public class WebsocketServerHandler extends SimpleChannelInboundHandler<Object> {
 
     private WebSocketServerHandshaker handShaker;
@@ -72,6 +73,7 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<Object> 
     }
 
     private void handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) {
+        log.info("received http request");
         if (!request.decoderResult().isSuccess() || (!"websocket".equals(request.headers().get("Upgrade")))) {
             log.error("websocket handshake error");
             sendHttpResponse(ctx, request, new DefaultFullHttpResponse(request.protocolVersion(), BAD_REQUEST));
@@ -83,6 +85,7 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<Object> 
         if (handShaker == null) {
             WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
         } else {
+            log.info("websocket handshake success");
             handShaker.handshake(ctx.channel(), request);
         }
     }
