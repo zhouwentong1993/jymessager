@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 通道管理器
+ * channel 管理器
  */
 @Slf4j
 @Component
@@ -49,7 +49,6 @@ public class ChannelManager {
                     channelByDeviceId.close();
                 }
             }
-
         }, 30, TimeUnit.SECONDS);
     }
 
@@ -62,5 +61,4 @@ public class ChannelManager {
         channelMap.remove(channel.id());
         channel.close();
     }
-
 }
