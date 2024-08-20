@@ -29,22 +29,34 @@ public class ChannelManager {
     @Autowired
     private RedisService redisService;
 
-    public void register(String deviceID, Channel channel) {
-        deviceChannelMap.put(deviceID, channel);
+    public Channel getChannelByClientId(String clientId) {
+        return deviceChannelMap.get(clientId);
+    }
+
+    public Channel removeChannelByChannelId(ChannelId channelId) {
+        return channelMap.remove(channelId);
+    }
+
+    public Channel removeChannelByClientId(String clientId) {
+        return deviceChannelMap.remove(clientId);
+    }
+
+    public void register(String clientId, Channel channel) {
+        deviceChannelMap.put(clientId, channel);
         channelMap.put(channel.id(), channel);
         globalTimer.submit(timeout -> {
-            log.info("check device {} heartbeat", deviceID);
-            Channel channelByDeviceId = getChannelByDeviceId(deviceID);
+            log.info("check device {} heartbeat", clientId);
+            Channel channelByDeviceId = getChannelByDeviceId(clientId);
             if (channelByDeviceId == null) {
-                log.info("device {} offline, remove it", deviceID);
-                deviceChannelMap.remove(deviceID);
+                log.info("device {} offline, remove it", clientId);
+                deviceChannelMap.remove(clientId);
                 channelMap.remove(channel.id());
             } else {
-                log.info("device {} is online, now check heartbeat", deviceID);
-                String heartbeat = redisService.get(RedisKey.heartbeatKey(deviceID));
+                log.info("device {} is online, now check heartbeat", clientId);
+                String heartbeat = redisService.get(RedisKey.heartbeatKey(clientId));
                 if (heartbeat == null || heartbeat.isEmpty()) {
-                    log.info("device {} heartbeat timeout, remove it", deviceID);
-                    deviceChannelMap.remove(deviceID);
+                    log.info("device {} heartbeat timeout, remove it", clientId);
+                    deviceChannelMap.remove(clientId);
                     channelMap.remove(channel.id());
                     channelByDeviceId.close();
                 }

@@ -6,4 +6,8 @@ public class RedisKey {
         return "heartbeat:deviceID:" + deviceID;
     }
 
+    public static String offlineKey(String deviceID) {
+        return "offline:deviceID:" + deviceID;
+    }
+
 }

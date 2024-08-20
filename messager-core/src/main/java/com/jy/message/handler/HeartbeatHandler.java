@@ -7,7 +7,10 @@ import com.jy.message.AbstractMessageHandler;
 import com.jy.message.MessageType;
 import com.jy.message.MessageWrapper;
 import com.jy.protocal.constants.Response;
+import com.jy.registry.ChannelManager;
 import com.jy.timer.GlobalTimer;
+import io.netty.channel.Channel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -15,12 +18,15 @@ import java.util.concurrent.TimeUnit;
 
 // heartbeat message handler
 @Component
+@Slf4j
 public class HeartbeatHandler extends AbstractMessageHandler {
 
     @Autowired
     private RedisService redisService;
     @Autowired
     private GlobalTimer globalTimer;
+    @Autowired
+    private ChannelManager channelManager;
 
     @Override
     public void doExecute(MessageWrapper message) {
@@ -32,7 +38,12 @@ public class HeartbeatHandler extends AbstractMessageHandler {
         globalTimer.submit(timeout -> {
             String heartbeat = redisService.get(RedisKey.heartbeatKey(clientID));
             if (heartbeat == null || heartbeat.isEmpty()) {
-                message.getChannel().close();
+                log.info("device {} heartbeat timeout, remove it", clientID);
+                Channel channel = channelManager.removeChannelByClientId(clientID);
+                if (channel != null) {
+                    channelManager.removeChannelByChannelId(channel.id());
+                    channel.close();
+                }
             }
         }, 60, TimeUnit.SECONDS);
     }
