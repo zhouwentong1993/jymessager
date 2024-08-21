@@ -32,6 +32,16 @@ public class HeartbeatHandler extends AbstractMessageHandler {
     public void doExecute(MessageWrapper message) {
         // deal with heartbeat message
         String clientID = message.getClientID();
+        Channel handshakeChannel = channelManager.getChannelByClientId(clientID);
+        if (handshakeChannel == null) {
+            log.error("clientID={} not online", clientID);
+            message.getChannel().writeAndFlush(JSON.toJSONString(Response.error("client not online, please handshake first")));
+            return;
+        } else if (!handshakeChannel.equals(message.getChannel())) { // 需要保持长连接，新建连接必须重新握手再重试
+            log.error("clientID={} not online", clientID);
+            message.getChannel().writeAndFlush(JSON.toJSONString(Response.error("client not online, please handshake first")));
+            return;
+        }
         redisService.setAndExpire(RedisKey.heartbeatKey(clientID), String.valueOf(System.currentTimeMillis()), 60);
         message.getChannel().writeAndFlush(JSON.toJSONString(Response.success()));
         // 心跳消息，添加 60s 的时间轮
