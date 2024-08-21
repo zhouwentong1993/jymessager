@@ -23,4 +23,10 @@ public class RedisService {
         }
     }
 
+    public void zadd(String key, double score, String member) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.zadd(key, score, member);
+        }
+    }
+
 }
