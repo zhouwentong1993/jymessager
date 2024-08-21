@@ -1,5 +1,6 @@
 package com.jy.message;
 
+import com.alibaba.fastjson2.JSON;
 import io.netty.channel.Channel;
 import lombok.Data;
 
@@ -30,6 +31,18 @@ public class MessageWrapper {
         wrapper.setClientType(message.getClientType());
         wrapper.setChannel(channel);
         return wrapper;
+    }
+
+    public static void main(String[] args) {
+        MessageWrapper messageWrapper = new MessageWrapper();
+        messageWrapper.setId(1L);
+        messageWrapper.setMessageType(1);
+        messageWrapper.setClientID("clientID1");
+        messageWrapper.setToken("token");
+        messageWrapper.setBody("body");
+        messageWrapper.setClientType(1);
+        messageWrapper.setChannel(null);
+        System.out.println(JSON.toJSONString(messageWrapper));
     }
 
 }

@@ -7,6 +7,7 @@ import com.jy.message.MessageWrapper;
 import com.jy.message.handler.validator.HandshakeValidatorManagement;
 import com.jy.protocal.constants.Response;
 import com.jy.registry.ChannelManager;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -27,12 +28,12 @@ public class HandshakeMessageHandler extends AbstractMessageHandler {
         // deal with handshake message
         if (!handshakeValidatorManagement.validate(message)) {
             log.error("handshake failed, message={}", message);
-            message.getChannel().writeAndFlush(JSON.toJSONString(Response.error("handshake failed")));
+            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("handshake failed"))));
             message.getChannel().close();
             return;
         }
         channelManager.register(message.getClientID(), message.getChannel());
-        message.getChannel().writeAndFlush(JSON.toJSONString(Response.success()));
+        message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success())));
     }
 
     @Override

@@ -10,6 +10,8 @@ import com.jy.protocal.constants.Response;
 import com.jy.registry.ChannelManager;
 import com.jy.timer.GlobalTimer;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -35,15 +37,20 @@ public class HeartbeatHandler extends AbstractMessageHandler {
         Channel handshakeChannel = channelManager.getChannelByClientId(clientID);
         if (handshakeChannel == null) {
             log.error("clientID={} not online", clientID);
-            message.getChannel().writeAndFlush(JSON.toJSONString(Response.error("client not online, please handshake first")));
+            ChannelFuture channelFuture = message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("client not online, please handshake first"))));
+            channelFuture.addListener(future -> {
+                if (future.isSuccess()) {
+                    log.info("send error message success");
+                }
+            });
             return;
         } else if (!handshakeChannel.equals(message.getChannel())) { // 需要保持长连接，新建连接必须重新握手再重试
             log.error("clientID={} not online", clientID);
-            message.getChannel().writeAndFlush(JSON.toJSONString(Response.error("client not online, please handshake first")));
+            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("client not online, please handshake first"))));
             return;
         }
         redisService.setAndExpire(RedisKey.heartbeatKey(clientID), String.valueOf(System.currentTimeMillis()), 60);
-        message.getChannel().writeAndFlush(JSON.toJSONString(Response.success()));
+        message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success())));
         // 心跳消息，添加 60s 的时间轮
         globalTimer.submit(timeout -> {
             String heartbeat = redisService.get(RedisKey.heartbeatKey(clientID));

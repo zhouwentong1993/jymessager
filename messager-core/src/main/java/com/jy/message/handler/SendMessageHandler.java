@@ -6,6 +6,7 @@ import com.jy.message.MessageType;
 import com.jy.message.MessageWrapper;
 import com.jy.registry.ChannelManager;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -41,7 +42,7 @@ public class SendMessageHandler extends AbstractMessageHandler {
             } else {
                 // 发送消息，并且需要写入待 ack 记录，供 ack 使用
                 log.info("send message to clientID={}, message={}", clientID, message.getBody());
-                channel.writeAndFlush(message.getBody());
+                channel.writeAndFlush(new TextWebSocketFrame(message.getBody()));
             }
         } catch (Exception e) {
             log.error("send message error", e);
