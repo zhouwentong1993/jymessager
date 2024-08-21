@@ -6,6 +6,7 @@ import com.jy.message.MessageType;
 import com.jy.message.MessageWrapper;
 import com.jy.registry.ChannelManager;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,7 @@ public class SendMessageHandler extends AbstractMessageHandler {
                 return;
             }
             Channel channel = channelManager.getChannelByClientId(clientID);
+            // todo 处理离线消息的存储
             if (channel == null) {
                 log.error("channel is null, clientID={}, save offline message.", clientID);
                 // 离线消息存储，默认存储 7 天
@@ -42,7 +44,14 @@ public class SendMessageHandler extends AbstractMessageHandler {
             } else {
                 // 发送消息，并且需要写入待 ack 记录，供 ack 使用
                 log.info("send message to clientID={}, message={}", clientID, message.getBody());
-                channel.writeAndFlush(new TextWebSocketFrame(message.getBody()));
+                ChannelFuture channelFuture = channel.writeAndFlush(new TextWebSocketFrame(message.getBody()));
+                channelFuture.addListener(future -> {
+                    if (future.isSuccess()) {
+                        log.info("send message success");
+                    } else { // todo 当发送失败时，要重试发送 & 重试次数限制 & 离线消息存储
+                        log.error("send message error");
+                    }
+                });
             }
         } catch (Exception e) {
             log.error("send message error", e);
