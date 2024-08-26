@@ -1,14 +1,15 @@
-package com.jy;
+package com.jy.messager;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
+@Slf4j
 public class MessagerApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(MessagerApplication.class);
-        System.out.println("Message service started successfully!");
+        log.info("Message service started successfully!");
     }
-
 }

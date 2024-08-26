@@ -1,5 +1,5 @@
 websocket:
-  port: 9091
+  port: 9092
 spring:
   redis:
     host: localhost
@@ -12,5 +12,7 @@ spring:
     password: guest
 logout:
   hosts:
-    - http://localhost:8081
-    - http://localhost:8082
+    - http://localhost:8080
+#    - http://localhost:8082
+server:
+  port: 8081

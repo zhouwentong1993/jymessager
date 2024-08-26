@@ -42,6 +42,7 @@ public class ChannelManager {
             return null;
         }
         Channel channelRemoved = deviceChannelMap.remove(clientId);
+
         if (channelRemoved != null) {
             removeChannelByChannelId(channelRemoved.id());
             channelRemoved.close();
@@ -50,6 +51,7 @@ public class ChannelManager {
     }
 
     public void register(String clientId, Channel channel) {
+        log.info("register device {} channelId:{}", clientId, channel.id().toString());
         deviceChannelMap.put(clientId, channel);
         channelMap.put(channel.id(), channel);
         globalTimer.submit(timeout -> {
