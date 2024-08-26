@@ -10,7 +10,7 @@ spring:
     port: 5672
     username: guest
     password: guest
-logging:
-  level:
-    root: info
-
+logout:
+  hosts:
+    - http://localhost:8081
+    - http://localhost:8082
