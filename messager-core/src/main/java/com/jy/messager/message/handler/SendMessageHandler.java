@@ -1,8 +1,10 @@
 package com.jy.messager.message.handler;
 
+import com.alibaba.fastjson2.JSON;
 import com.jy.messager.config.redis.RedisKey;
 import com.jy.messager.config.redis.RedisService;
 import com.jy.messager.message.AbstractMessageHandler;
+import com.jy.messager.message.MessagePair;
 import com.jy.messager.message.MessageType;
 import com.jy.messager.message.MessageWrapper;
 import com.jy.messager.registry.ChannelManager;
@@ -43,22 +45,21 @@ public class SendMessageHandler extends AbstractMessageHandler {
             }
             Channel channel = channelManager.getChannelByClientId(clientID);
             // 先把消息存储起来
-            messageSaveWithAck(message, clientID);
+            String ackId = messageSaveWithAck(message, clientID);
 
             if (channel == null) {
                 log.error("channel is null, clientID={}, save offline message.", clientID);
-                return;
             } else {
                 // 发送消息，并且需要写入待 ack 记录，供 ack 使用
                 log.info("send message to clientID={}, message={}", clientID, message.getBody());
-                ChannelFuture channelFuture = channel.writeAndFlush(new TextWebSocketFrame(message.getBody()));
+                ChannelFuture channelFuture = channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(new MessagePair(message.getBody(), ackId))));
                 channelFuture.addListener(future -> {
                     if (future.isSuccess()) {
                         log.info("send message success");
                     } else { // todo 当发送失败时，要重试发送 & 重试次数限制 & 离线消息存储
                         log.error("send message error");
                         globalTimer.submit(timeout -> {
-                            ChannelFuture channelFuture1 = message.getChannel().writeAndFlush(new TextWebSocketFrame(message.getBody()));
+                            ChannelFuture channelFuture1 = channel.writeAndFlush(new TextWebSocketFrame(message.getBody()));
                             channelFuture1.addListener(future1 -> {
                                 if (future1.isSuccess()) {
                                     log.info("retry send message success");
@@ -75,7 +76,7 @@ public class SendMessageHandler extends AbstractMessageHandler {
         }
     }
 
-    private void messageSaveWithAck(MessageWrapper message, String clientID) {
+    private String messageSaveWithAck(MessageWrapper message, String clientID) {
         // 离线消息存储，默认存储 7 天
         // 不能使用 MD5 摘要，因为可能会有重复消息
 //        String md5 = MD5.create().digestHex(message.getBody());
@@ -86,6 +87,7 @@ public class SendMessageHandler extends AbstractMessageHandler {
 
         // 30s 没有 ack 就取消
         redisService.setAndExpire(RedisKey.ackKey(uuid), String.valueOf(System.currentTimeMillis()), 30);
+        return uuid;
     }
 
     @Override

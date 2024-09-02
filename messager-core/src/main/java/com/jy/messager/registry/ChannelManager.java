@@ -23,6 +23,8 @@ public class ChannelManager {
     // 设备 id 和通道之间的映射关系
     private final Map<String, Channel> deviceChannelMap = new ConcurrentHashMap<>();
     private final Map<ChannelId, Channel> channelMap = new ConcurrentHashMap<>();
+    // channel 和 设备 id 之间的映射关系
+    private final Map<ChannelId, String> channelToDeviceMap = new ConcurrentHashMap<>();
 
     @Autowired
     private GlobalTimer globalTimer;
@@ -34,7 +36,9 @@ public class ChannelManager {
     }
 
     public Channel removeChannelByChannelId(ChannelId channelId) {
-        return channelMap.remove(channelId);
+        Channel remove = channelMap.remove(channelId);
+        channelToDeviceMap.remove(channelId);
+        return remove;
     }
 
     public Channel removeChannelByClientId(String clientId) {
@@ -46,6 +50,7 @@ public class ChannelManager {
         if (channelRemoved != null) {
             removeChannelByChannelId(channelRemoved.id());
             channelRemoved.close();
+            channelToDeviceMap.remove(channelRemoved.id());
         }
         return channelRemoved;
     }
@@ -53,6 +58,7 @@ public class ChannelManager {
     public void register(String clientId, Channel channel) {
         log.info("register device {} channelId:{}", clientId, channel.id().toString());
         deviceChannelMap.put(clientId, channel);
+        channelToDeviceMap.put(channel.id(), clientId);
         channelMap.put(channel.id(), channel);
         globalTimer.submit(timeout -> {
             log.info("check device {} heartbeat", clientId);
@@ -81,6 +87,7 @@ public class ChannelManager {
     public void unRegister(Channel channel) {
         deviceChannelMap.remove(channel.id().asLongText());
         channelMap.remove(channel.id());
+        channelToDeviceMap.remove(channel.id());
         channel.close();
     }
 }

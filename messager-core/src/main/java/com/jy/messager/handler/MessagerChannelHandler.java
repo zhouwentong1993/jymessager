@@ -49,6 +49,7 @@ public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebS
                 CloseWebSocketFrame closeWebSocketFrame = (CloseWebSocketFrame) msg;
                 log.info("close frame received, now clean up resources");
                 handShaker.close(ctx.channel(), closeWebSocketFrame.retain());
+                channelManager.unRegister(ctx.channel());
             }
             // answer ping frame
             if (msg instanceof PingWebSocketFrame) {
