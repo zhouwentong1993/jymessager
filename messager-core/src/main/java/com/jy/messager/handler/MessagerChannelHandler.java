@@ -8,10 +8,7 @@ import com.jy.messager.protocal.constants.Response;
 import com.jy.messager.registry.ChannelManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
@@ -29,6 +26,7 @@ import static io.netty.handler.codec.http.HttpUtil.setContentLength;
 
 @Slf4j
 @Component
+@ChannelHandler.Sharable
 public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
     private WebSocketServerHandshaker handShaker;

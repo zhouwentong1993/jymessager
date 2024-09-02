@@ -1,6 +1,5 @@
 package com.jy.messager.message.handler;
 
-import cn.hutool.crypto.digest.MD5;
 import com.jy.messager.config.redis.RedisKey;
 import com.jy.messager.config.redis.RedisService;
 import com.jy.messager.message.AbstractMessageHandler;
@@ -15,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -42,10 +42,11 @@ public class SendMessageHandler extends AbstractMessageHandler {
                 return;
             }
             Channel channel = channelManager.getChannelByClientId(clientID);
-            // todo 处理离线消息的存储
+            // 先把消息存储起来
+            messageSaveWithAck(message, clientID);
+
             if (channel == null) {
                 log.error("channel is null, clientID={}, save offline message.", clientID);
-                offlineMessageSave(message, clientID);
                 return;
             } else {
                 // 发送消息，并且需要写入待 ack 记录，供 ack 使用
@@ -54,7 +55,6 @@ public class SendMessageHandler extends AbstractMessageHandler {
                 channelFuture.addListener(future -> {
                     if (future.isSuccess()) {
                         log.info("send message success");
-
                     } else { // todo 当发送失败时，要重试发送 & 重试次数限制 & 离线消息存储
                         log.error("send message error");
                         globalTimer.submit(timeout -> {
@@ -64,7 +64,6 @@ public class SendMessageHandler extends AbstractMessageHandler {
                                     log.info("retry send message success");
                                 } else {
                                     log.error("retry send message error");
-                                    offlineMessageSave(message, clientID);
                                 }
                             });
                         },3, TimeUnit.SECONDS);
@@ -76,12 +75,17 @@ public class SendMessageHandler extends AbstractMessageHandler {
         }
     }
 
-    private void offlineMessageSave(MessageWrapper message, String clientID) {
+    private void messageSaveWithAck(MessageWrapper message, String clientID) {
         // 离线消息存储，默认存储 7 天
-        String md5 = MD5.create().digestHex(message.getBody());
+        // 不能使用 MD5 摘要，因为可能会有重复消息
+//        String md5 = MD5.create().digestHex(message.getBody());
+        String uuid = UUID.randomUUID().toString();
         // cache offline message for 7 days
-        redisService.setAndExpire(RedisKey.offlineKey(md5), message.getBody(), 7 * 24 * 60 * 60);
-        redisService.zadd(clientID, System.currentTimeMillis(), md5);
+        redisService.setAndExpire(RedisKey.messageKey(uuid), message.getBody(), 7 * 24 * 60 * 60);
+        redisService.zadd(RedisKey.clientMessageKey(clientID), System.currentTimeMillis(), uuid);
+
+        // 30s 没有 ack 就取消
+        redisService.setAndExpire(RedisKey.ackKey(uuid), String.valueOf(System.currentTimeMillis()), 30);
     }
 
     @Override

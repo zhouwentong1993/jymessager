@@ -11,6 +11,7 @@ public abstract class AbstractMessageHandler implements MessageHandler {
     @Override
     public void execute(MessageWrapper message) {
         try {
+            log.info("execute message={}", message);
             doExecute(message);
         } catch (Exception e) {
             log.error("execute message error", e);
