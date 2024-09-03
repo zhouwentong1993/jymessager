@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import static com.jy.messager.protocal.constants.ResponseType.MESSAGE_ACK;
+
 @Component
 @Slf4j
 public class AckMessageHandler extends AbstractMessageHandler {
@@ -25,7 +27,7 @@ public class AckMessageHandler extends AbstractMessageHandler {
         // deal with ack message
         String ackId = message.getBody();
         if (ackId == null || ackId.isEmpty()) {
-            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("ackId is empty"))));
+            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("ackId is empty", MESSAGE_ACK))));
             message.getChannel().close();
         }
 
@@ -34,10 +36,10 @@ public class AckMessageHandler extends AbstractMessageHandler {
             redisService.remove(RedisKey.ackKey(ackId));
             redisService.zrem(RedisKey.clientMessageKey(message.getClientID()), ackId);
             log.info("ack success, ackId={}, key={}", ackId, key);
-            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success())));
+            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success(MESSAGE_ACK))));
         } else {
             log.error("ack failed, ackId={} not exists.", ackId);
-            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("ack id not exists."))));
+            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("ack id not exists.",MESSAGE_ACK))));
         }
     }
 

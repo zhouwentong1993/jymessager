@@ -29,7 +29,7 @@ public class MessageStorageService {
                 String realMessage = redisService.get(RedisKey.messageKey(messageId));
                 // 重建 ack 时间，30s 内 ack
                 redisService.expire(RedisKey.ackKey(realMessage), 30);
-                return new MessagePair(messageId, realMessage);
+                return MessagePair.builder().message(realMessage).messageId(messageId).build();
             }).collect(Collectors.toList());
             log.info("get message, clientID={}, messages={}", clientID, messages);
             return messages;

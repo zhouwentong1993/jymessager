@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+import static com.jy.messager.protocal.constants.ResponseType.HANDSHAKE;
+
 @Component
 @Slf4j
 public class HandshakeMessageHandler extends AbstractMessageHandler {
@@ -37,12 +39,12 @@ public class HandshakeMessageHandler extends AbstractMessageHandler {
         // deal with handshake message
         if (!handshakeValidatorManagement.validate(message)) {
             log.error("handshake failed, message={}", message);
-            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("handshake failed"))));
+            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("handshake failed",HANDSHAKE))));
             message.getChannel().close();
             return;
         }
         channelManager.register(message.getClientID(), message.getChannel());
-        message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success())));
+        message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success(HANDSHAKE))));
         // 向其他所有节点发送登出命令，避免多点登录
         try {
             logoutHosts.getHosts().forEach(host -> HttpUtil.post(host + "/message/kickOut", JSON.toJSONString(message)));
@@ -53,8 +55,6 @@ public class HandshakeMessageHandler extends AbstractMessageHandler {
         List<MessagePair> offlineMessage = messageStorageService.getOfflineMessage(message.getClientID());
         offlineMessage.forEach(msg -> message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(msg))));
     }
-
-
 
     @Override
     public int getType() {

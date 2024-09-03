@@ -52,11 +52,12 @@ public class SendMessageHandler extends AbstractMessageHandler {
             } else {
                 // 发送消息，并且需要写入待 ack 记录，供 ack 使用
                 log.info("send message to clientID={}, message={}", clientID, message.getBody());
-                ChannelFuture channelFuture = channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(new MessagePair(message.getBody(), ackId))));
+                ChannelFuture channelFuture = channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(MessagePair.builder().message(message.getBody()).messageId(ackId).build())));
+
                 channelFuture.addListener(future -> {
                     if (future.isSuccess()) {
                         log.info("send message success");
-                    } else { // todo 当发送失败时，要重试发送 & 重试次数限制 & 离线消息存储
+                    } else {
                         log.error("send message error");
                         globalTimer.submit(timeout -> {
                             ChannelFuture channelFuture1 = channel.writeAndFlush(new TextWebSocketFrame(message.getBody()));

@@ -7,6 +7,7 @@ import com.jy.messager.message.AbstractMessageHandler;
 import com.jy.messager.message.MessageType;
 import com.jy.messager.message.MessageWrapper;
 import com.jy.messager.protocal.constants.Response;
+import com.jy.messager.protocal.constants.ResponseType;
 import com.jy.messager.registry.ChannelManager;
 import com.jy.messager.timer.GlobalTimer;
 import io.netty.channel.Channel;
@@ -37,7 +38,7 @@ public class HeartbeatHandler extends AbstractMessageHandler {
         Channel handshakeChannel = channelManager.getChannelByClientId(clientID);
         if (handshakeChannel == null) {
             log.error("clientID={} not online", clientID);
-            ChannelFuture channelFuture = message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("client not online, please handshake first"))));
+            ChannelFuture channelFuture = message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("client not online, please handshake first", ResponseType.HEARTBEAT))));
             channelFuture.addListener(future -> {
                 if (future.isSuccess()) {
                     log.info("send error message success");
@@ -46,11 +47,11 @@ public class HeartbeatHandler extends AbstractMessageHandler {
             return;
         } else if (!handshakeChannel.equals(message.getChannel())) { // 需要保持长连接，新建连接必须重新握手再重试
             log.error("clientID={} not online", clientID);
-            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("client not online, please handshake first"))));
+            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("client not online, please handshake first", ResponseType.HEARTBEAT))));
             return;
         }
         redisService.setAndExpire(RedisKey.heartbeatKey(clientID), String.valueOf(System.currentTimeMillis()), 60);
-        message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success())));
+        message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success(ResponseType.HEARTBEAT))));
         // 心跳消息，添加 60s 的时间轮
         globalTimer.submit(timeout -> {
             String heartbeat = redisService.get(RedisKey.heartbeatKey(clientID));

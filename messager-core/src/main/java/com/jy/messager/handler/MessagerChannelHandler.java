@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.util.Map;
 
+import static com.jy.messager.protocal.constants.ResponseType.SYSTEM_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpUtil.isKeepAlive;
 import static io.netty.handler.codec.http.HttpUtil.setContentLength;
@@ -67,7 +68,7 @@ public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebS
         log.info("received message: {}", text);
         if (text == null || text.isEmpty() || !JSON.isValid(text)) {
             log.error("empty message received, remove this channel: {}", channelHandlerContext.channel().id());
-            channelHandlerContext.channel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("invalid json format"))));
+            channelHandlerContext.channel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("invalid json format", SYSTEM_ERROR))));
             channelManager.unRegister(channelHandlerContext.channel());
             return;
         }
@@ -75,7 +76,7 @@ public class MessagerChannelHandler extends SimpleChannelInboundHandler<TextWebS
         MessageHandler messageHandler = messageHandlerMap.get(message.getMessageType());
         if (messageHandler == null) {
             log.error("no handler found for message type: {}", message.getMessageType());
-            channelHandlerContext.channel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("invalid message type:" + message.getMessageType()))));
+            channelHandlerContext.channel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("invalid message type:" + message.getMessageType(), SYSTEM_ERROR))));
             return;
         }
         messageHandler.execute(MessageWrapper.wrap(message, channelHandlerContext.channel()));

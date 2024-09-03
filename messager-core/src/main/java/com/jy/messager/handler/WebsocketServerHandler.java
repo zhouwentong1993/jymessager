@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.websocketx.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import static com.jy.messager.protocal.constants.ResponseType.SYSTEM_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpUtil.isKeepAlive;
 import static io.netty.handler.codec.http.HttpUtil.setContentLength;
@@ -63,8 +64,7 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<Object> 
         String text = textWebSocketFrame.text();
         boolean valid = JSON.isValid(text);// check if json format
         if (!valid) {
-            log.error("invalid json format");
-            channelHandlerContext.channel().write(new TextWebSocketFrame(JSON.toJSONString(Response.error("invalid json format"))));
+            channelHandlerContext.channel().write(new TextWebSocketFrame(JSON.toJSONString(Response.error("invalid json format", SYSTEM_ERROR))));
             return;
         }
         log.info("received message: {}", text);

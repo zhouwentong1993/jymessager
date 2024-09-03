@@ -1,6 +1,6 @@
 package com.jy.test;
 
-import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.*;
@@ -63,7 +63,10 @@ public class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> 
             TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
             String text = textFrame.text();
             System.out.println("WebSocket Client received message: " + text);
-            Object parse = JSON.parse(text);
+            JSONObject jsonObject = JSONObject.parseObject(text);
+            String messageId = jsonObject.getString("messageId");
+            String ackMessage = Startup.createMessage("a", messageId, 4);
+            ch.writeAndFlush(new TextWebSocketFrame(ackMessage));
         } else if (frame instanceof PongWebSocketFrame) {
             System.out.println("WebSocket Client received pong");
         } else if (frame instanceof CloseWebSocketFrame) {

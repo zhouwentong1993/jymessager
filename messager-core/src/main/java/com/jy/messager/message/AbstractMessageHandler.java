@@ -5,6 +5,8 @@ import com.jy.messager.protocal.constants.Response;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.jy.messager.protocal.constants.ResponseType.SYSTEM_ERROR;
+
 @Slf4j
 public abstract class AbstractMessageHandler implements MessageHandler {
 
@@ -15,7 +17,7 @@ public abstract class AbstractMessageHandler implements MessageHandler {
             doExecute(message);
         } catch (Exception e) {
             log.error("execute message error", e);
-            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("Execute message error, please retry later."))));
+            message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.error("Execute message error, please retry later.", SYSTEM_ERROR))));
         }
     }
 
