@@ -21,9 +21,9 @@ public class Response {
         return new Response(200, "success", null, type);
     }
 
-//    public static Response success(Object data) {
-//        return new Response(200, "success", data);
-//    }
+    public static Response success(Object data, int type) {
+        return new Response(200, "success", data, type);
+    }
 //
 //    public static Response error() {
 //        return new Response(500, "error", null);

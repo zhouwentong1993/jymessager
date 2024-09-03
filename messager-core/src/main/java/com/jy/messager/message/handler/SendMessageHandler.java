@@ -7,6 +7,8 @@ import com.jy.messager.message.AbstractMessageHandler;
 import com.jy.messager.message.MessagePair;
 import com.jy.messager.message.MessageType;
 import com.jy.messager.message.MessageWrapper;
+import com.jy.messager.protocal.constants.Response;
+import com.jy.messager.protocal.constants.ResponseType;
 import com.jy.messager.registry.ChannelManager;
 import com.jy.messager.timer.GlobalTimer;
 import io.netty.channel.Channel;
@@ -52,7 +54,7 @@ public class SendMessageHandler extends AbstractMessageHandler {
             } else {
                 // 发送消息，并且需要写入待 ack 记录，供 ack 使用
                 log.info("send message to clientID={}, message={}", clientID, message.getBody());
-                ChannelFuture channelFuture = channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(MessagePair.builder().message(message.getBody()).messageId(ackId).build())));
+                ChannelFuture channelFuture = channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success(MessagePair.builder().message(message.getBody()).messageId(ackId).build(), ResponseType.SEND_MESSAGE))));
 
                 channelFuture.addListener(future -> {
                     if (future.isSuccess()) {
@@ -60,7 +62,7 @@ public class SendMessageHandler extends AbstractMessageHandler {
                     } else {
                         log.error("send message error");
                         globalTimer.submit(timeout -> {
-                            ChannelFuture channelFuture1 = channel.writeAndFlush(new TextWebSocketFrame(message.getBody()));
+                            ChannelFuture channelFuture1 = channel.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success(MessagePair.builder().message(message.getBody()).messageId(ackId).build(), ResponseType.SEND_MESSAGE))));
                             channelFuture1.addListener(future1 -> {
                                 if (future1.isSuccess()) {
                                     log.info("retry send message success");
