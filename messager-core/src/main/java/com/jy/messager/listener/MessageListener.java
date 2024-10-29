@@ -25,7 +25,8 @@ public class MessageListener {
     public void onMessage(String msg) {
         try {
 
-            System.out.println("Received msg: " + msg);
+//            System.out.println("Received msg: " + msg);
+            log.info("Received msg: " + msg);
             Message message = JSON.parseObject(msg, Message.class);
             MessageWrapper wrap = MessageWrapper.wrap(message, null);
             sendMessageHandler.execute(wrap);

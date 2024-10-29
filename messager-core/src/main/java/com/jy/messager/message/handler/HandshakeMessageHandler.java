@@ -1,6 +1,5 @@
 package com.jy.messager.message.handler;
 
-import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.jy.messager.config.logout.LogoutHosts;
 import com.jy.messager.message.AbstractMessageHandler;
@@ -46,11 +45,11 @@ public class HandshakeMessageHandler extends AbstractMessageHandler {
         channelManager.register(message.getClientID(), message.getChannel());
         message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(Response.success(HANDSHAKE))));
         // 向其他所有节点发送登出命令，避免多点登录
-        try {
-            logoutHosts.getHosts().forEach(host -> HttpUtil.post(host + "/message/kickOut", JSON.toJSONString(message)));
-        } catch (Exception e) {
-            log.error("kick out error", e);
-        }
+//        try {
+//            logoutHosts.getHosts().forEach(host -> HttpUtil.post(host + "/message/kickOut", JSON.toJSONString(message)));
+//        } catch (Exception e) {
+//            log.error("kick out error", e);
+//        }
         // 向客户端发送离线消息，获取所有离线消息
         List<MessagePair> offlineMessage = messageStorageService.getOfflineMessage(message.getClientID());
         offlineMessage.forEach(msg -> message.getChannel().writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(msg))));

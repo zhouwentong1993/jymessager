@@ -21,6 +21,16 @@ import java.net.URI;
 
 public class BaseTest {
 
+    public static void sendMQ(String content, Channel channel) throws Exception {
+
+        // 声明一个队列
+//        channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+
+        //发送消息到队列中
+        channel.basicPublish("messager-exchange", "", null, content.getBytes());
+//        System.out.println("Producer Send +'" + content + "'");
+    }
+
     public static void sendMQ(String content) throws Exception {
         //创建连接工厂
         ConnectionFactory factory = new ConnectionFactory();
@@ -61,24 +71,24 @@ public class BaseTest {
         }
         EventLoopGroup group = new NioEventLoopGroup();
 //        try {
-            // Connect with V13 (RFC 6455 aka HyBi-17). You can change it to V08 or V00.
-            // If you change it to V00, ping is not supported and remember to change
-            // HttpResponseDecoder to WebSocketHttpResponseDecoder in the pipeline.
-            final WebSocketClientHandler handler = new WebSocketClientHandler(WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()));
+        // Connect with V13 (RFC 6455 aka HyBi-17). You can change it to V08 or V00.
+        // If you change it to V00, ping is not supported and remember to change
+        // HttpResponseDecoder to WebSocketHttpResponseDecoder in the pipeline.
+        final WebSocketClientHandler handler = new WebSocketClientHandler(WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()));
 
-            Bootstrap b = new Bootstrap();
-            b.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                protected void initChannel(SocketChannel ch) {
-                    ChannelPipeline p = ch.pipeline();
-                    p.addLast(new HttpClientCodec(), new HttpObjectAggregator(8192), WebSocketClientCompressionHandler.INSTANCE, handler);
-                }
-            });
+        Bootstrap b = new Bootstrap();
+        b.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            protected void initChannel(SocketChannel ch) {
+                ChannelPipeline p = ch.pipeline();
+                p.addLast(new HttpClientCodec(), new HttpObjectAggregator(8192), WebSocketClientCompressionHandler.INSTANCE, handler);
+            }
+        });
 
-            io.netty.channel.Channel ch = b.connect(uri.getHost(), port).sync().channel();
+        io.netty.channel.Channel ch = b.connect(uri.getHost(), port).sync().channel();
 //            handler.handshakeFuture().sync();
 //            ch.closeFuture().sync();
-            return ch;
+        return ch;
 
 //        } finally {
 //            group.shutdownGracefully();

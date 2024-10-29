@@ -10,6 +10,13 @@ spring:
     port: 5672
     username: guest
     password: guest
+    listener:
+      simple:
+        # acknowledge-mode: manual # 手动确定（默认自动确认）
+        concurrency: 50 # 消费端的监听个数(即@RabbitListener开启几个线程去处理数据。)
+        max-concurrency: 100 # 消费端的监听最大个数
+        prefetch: 100
+      connection-timeout: 15000   # 超时时间
 logout:
   hosts:
     - http://localhost:8080
